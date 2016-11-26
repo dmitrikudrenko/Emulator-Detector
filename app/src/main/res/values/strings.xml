@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">EmulatorDetectorViaSensor</string>
+    <string name="device_is_emulator">Device is emulator</string>
+    <string name="device_is_not_emulator">Device is not emulator</string>
+</resources>

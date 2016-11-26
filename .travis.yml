@@ -1,0 +1,23 @@
+language: android
+android:
+  components:
+    - tools
+    - build-tools-24.0.2
+    - android-24
+    - add-on
+    - extra
+  licenses:
+    - 'android-sdk-preview-license-.+'
+    - 'android-sdk-license-.+'
+    - 'google-gdk-license-.+'
+
+jdk:
+  - oraclejdk8
+
+before_install:
+  - chmod +x gradlew
+
+after_success:
+  - .buildscript/deploy_snapshot.sh
+
+script: ./gradlew build
