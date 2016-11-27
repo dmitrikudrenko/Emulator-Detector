@@ -11,13 +11,22 @@ import android.util.Log;
 import java.util.Arrays;
 
 public class EmulatorDetector {
-    private static final int DELAY = 1000;
-    private float[][] sensorData = new float[10][];
-    private int eventCount = 0;
+    private final int delay;
+    private final float[][] sensorData;
+    private int eventCount;
     private float[] lastSensorValues;
     private Handler mHandler = new Handler();
     private SensorEventListener mSensorEventListener;
     private boolean isSleeping;
+
+    private EmulatorDetector(int delay, int eventCount) {
+        this.delay = delay;
+        this.sensorData = new float[eventCount][];
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
 
     public void detect(Context context, final Callback callback) {
         final SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -42,7 +51,7 @@ public class EmulatorDetector {
                                 Log.i("Sensor data", Arrays.toString(lastSensorValues));
                                 eventCount++;
                                 if (eventCount != sensorData.length) {
-                                    mHandler.postDelayed(this, DELAY);
+                                    mHandler.postDelayed(this, delay);
                                 } else {
                                     sensorManager.unregisterListener(mSensorEventListener);
                                     processSensorData(callback);
@@ -50,7 +59,7 @@ public class EmulatorDetector {
                                 isSleeping = false;
                             }
                         }
-                    }, DELAY);
+                    }, delay);
                 }
             }
 
@@ -59,7 +68,7 @@ public class EmulatorDetector {
 
             }
         };
-        sensorManager.registerListener(mSensorEventListener, accelerometerSensor, 1000*1000*1000);
+        sensorManager.registerListener(mSensorEventListener, accelerometerSensor, 1000 * 1000 * 1000);
     }
 
     private void processSensorData(Callback callback) {
@@ -83,7 +92,7 @@ public class EmulatorDetector {
             if (dz == 0) sameD++;
             if (sameD >= 2) sameEventCount++;
         }
-        callback.onDetect(sameEventCount >= 5);
+        callback.onDetect( (double) sameEventCount /  (double) sensorData.length >= 0.5D);
     }
 
     private float[] copy(float[] array) {
@@ -96,5 +105,24 @@ public class EmulatorDetector {
         void onDetect(boolean isEmulator);
 
         void onError(Exception exception);
+    }
+
+    public static class Builder {
+        private int delay = 1000;
+        private int eventCount = 10;
+
+        public Builder setEventCount(int eventCount) {
+            this.eventCount = eventCount;
+            return this;
+        }
+
+        public Builder setDelay(int delay) {
+            this.delay = delay;
+            return this;
+        }
+
+        public EmulatorDetector build() {
+            return new EmulatorDetector(delay, eventCount);
+        }
     }
 }

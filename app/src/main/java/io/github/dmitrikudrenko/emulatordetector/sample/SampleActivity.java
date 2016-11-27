@@ -17,7 +17,11 @@ public class SampleActivity extends AppCompatActivity {
         setContentView(R.layout.a_sample);
         mStatusView = (TextView) findViewById(R.id.status);
 
-        EmulatorDetector mEmulatorDetector = new EmulatorDetector();
+        EmulatorDetector mEmulatorDetector = EmulatorDetector.builder()
+                .setDelay(500)
+                .setEventCount(5)
+                //check continues 500*5 = 2500ms
+                .build();
         mEmulatorDetector.detect(this, new EmulatorDetector.Callback() {
             @Override
             public void onDetect(boolean isEmulator) {
