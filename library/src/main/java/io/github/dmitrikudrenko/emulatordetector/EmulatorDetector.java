@@ -18,14 +18,12 @@ public class EmulatorDetector {
     private Handler mHandler = new Handler();
     private SensorEventListener mSensorEventListener;
     private boolean isSleeping;
-    private int dCountInPair;
-    private double inappropriatePercent;
+    private ISensorDataProcessor sensorDataProcessor;
 
-    private EmulatorDetector(int delay, int eventCount, int dCountInPair, double inappropriatePercent) {
+    private EmulatorDetector(int delay, int eventCount, ISensorDataProcessor sensorDataProcessor) {
         this.delay = delay;
         this.sensorData = new float[eventCount][];
-        this.dCountInPair = dCountInPair;
-        this.inappropriatePercent = inappropriatePercent;
+        this.sensorDataProcessor = sensorDataProcessor;
     }
 
     public static Builder builder() {
@@ -58,7 +56,7 @@ public class EmulatorDetector {
                                     mHandler.postDelayed(this, delay);
                                 } else {
                                     sensorManager.unregisterListener(mSensorEventListener);
-                                    processSensorData(callback);
+                                    callback.onDetect(sensorDataProcessor.isEmulator(sensorData));
                                 }
                                 isSleeping = false;
                             }
@@ -73,30 +71,6 @@ public class EmulatorDetector {
             }
         };
         sensorManager.registerListener(mSensorEventListener, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-    }
-
-    private void processSensorData(Callback callback) {
-        float dx, dy, dz;
-        float lastX = 0, lastY = 0, lastZ = 0;
-        int sameEventCount = 0;
-        Log.i("Sensor data", Arrays.deepToString(sensorData));
-        for (int i = 0; i < sensorData.length; i++) {
-            if (i == 0) {
-                lastX = sensorData[i][0];
-                lastY = sensorData[i][1];
-                lastZ = sensorData[i][2];
-                continue;
-            }
-            dx = sensorData[i][0] - lastX;
-            dy = sensorData[i][1] - lastY;
-            dz = sensorData[i][2] - lastZ;
-            int sameD = 0;
-            if (dx == 0) sameD++;
-            if (dy == 0) sameD++;
-            if (dz == 0) sameD++;
-            if (sameD >= dCountInPair) sameEventCount++;
-        }
-        callback.onDetect((double) sameEventCount / (double) sensorData.length >= inappropriatePercent);
     }
 
     private float[] copy(float[] array) {
@@ -118,8 +92,7 @@ public class EmulatorDetector {
     public static class Builder {
         private int delay = 1000;
         private int eventCount = 10;
-        private int dCountInPair = 2;
-        private double inappropriatePercent = 0.5D;
+        private ISensorDataProcessor sensorDataProcessor;
 
         public Builder setEventCount(int eventCount) {
             this.eventCount = eventCount;
@@ -131,18 +104,14 @@ public class EmulatorDetector {
             return this;
         }
 
-        public Builder setDCountInPair(int dCountInPair) {
-            this.dCountInPair = dCountInPair;
-            return this;
-        }
-
-        public Builder setInappropriatePercent(double inappropriatePercent) {
-            this.inappropriatePercent = inappropriatePercent;
+        public Builder setSensorDataProcessor(ISensorDataProcessor sensorDataProcessor) {
+            this.sensorDataProcessor = sensorDataProcessor;
             return this;
         }
 
         public EmulatorDetector build() {
-            return new EmulatorDetector(delay, eventCount, dCountInPair, inappropriatePercent);
+            return new EmulatorDetector(delay, eventCount,
+                    sensorDataProcessor != null ? sensorDataProcessor : new DefaultSensorDataProcessor());
         }
     }
 }
