@@ -18,10 +18,14 @@ public class EmulatorDetector {
     private Handler mHandler = new Handler();
     private SensorEventListener mSensorEventListener;
     private boolean isSleeping;
+    private int dCountInPair;
+    private double inappropriatePercent;
 
-    private EmulatorDetector(int delay, int eventCount) {
+    private EmulatorDetector(int delay, int eventCount, int dCountInPair, double inappropriatePercent) {
         this.delay = delay;
         this.sensorData = new float[eventCount][];
+        this.dCountInPair = dCountInPair;
+        this.inappropriatePercent = inappropriatePercent;
     }
 
     public static Builder builder() {
@@ -68,7 +72,7 @@ public class EmulatorDetector {
 
             }
         };
-        sensorManager.registerListener(mSensorEventListener, accelerometerSensor, 1000 * 1000 * 1000);
+        sensorManager.registerListener(mSensorEventListener, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
     }
 
     private void processSensorData(Callback callback) {
@@ -90,15 +94,19 @@ public class EmulatorDetector {
             if (dx == 0) sameD++;
             if (dy == 0) sameD++;
             if (dz == 0) sameD++;
-            if (sameD >= 2) sameEventCount++;
+            if (sameD >= dCountInPair) sameEventCount++;
         }
-        callback.onDetect( (double) sameEventCount /  (double) sensorData.length >= 0.5D);
+        callback.onDetect((double) sameEventCount / (double) sensorData.length >= inappropriatePercent);
     }
 
     private float[] copy(float[] array) {
         float[] copy = new float[array.length];
         System.arraycopy(array, 0, copy, 0, array.length);
         return copy;
+    }
+
+    public float[][] getSensorData() {
+        return sensorData;
     }
 
     public interface Callback {
@@ -110,6 +118,8 @@ public class EmulatorDetector {
     public static class Builder {
         private int delay = 1000;
         private int eventCount = 10;
+        private int dCountInPair = 2;
+        private double inappropriatePercent = 0.5D;
 
         public Builder setEventCount(int eventCount) {
             this.eventCount = eventCount;
@@ -121,8 +131,18 @@ public class EmulatorDetector {
             return this;
         }
 
+        public Builder setDCountInPair(int dCountInPair) {
+            this.dCountInPair = dCountInPair;
+            return this;
+        }
+
+        public Builder setInappropriatePercent(double inappropriatePercent) {
+            this.inappropriatePercent = inappropriatePercent;
+            return this;
+        }
+
         public EmulatorDetector build() {
-            return new EmulatorDetector(delay, eventCount);
+            return new EmulatorDetector(delay, eventCount, dCountInPair, inappropriatePercent);
         }
     }
 }
