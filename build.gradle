@@ -6,8 +6,8 @@ project.ext {
     androidMinSdkVersion = 14
     androidTargetSdkVersion = androidCompileSdkVersion
 
-    libraryVersionCode = 5
-    libraryVersionName = "1.0.4"
+    libraryVersionCode = 6
+    libraryVersionName = "1.0.5"
 }
 
 buildscript {
